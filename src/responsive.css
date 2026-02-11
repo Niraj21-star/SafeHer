@@ -1,0 +1,213 @@
+/* ============================================
+   MOBILE-SPECIFIC OPTIMIZATIONS
+   ============================================ */
+
+/* Prevent text resize on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth scrolling on iOS */
+body {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Safe area padding for notched devices */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .page-container {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom));
+  }
+  
+  .nav-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(70px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================
+   RESPONSIVE IMAGES & MEDIA
+   ============================================ */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  .nav-bottom,
+  .sos-button,
+  button {
+    display: none !important;
+  }
+  
+  .page-container {
+    padding-bottom: 0;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY - REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .sos-button {
+    animation: none;
+  }
+}
+
+/* ============================================
+   DARK MODE SUPPORT (Future Enhancement)
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  /* Commented out for now - can be enabled later
+  :root {
+    --background: #1F2937;
+    --surface: #374151;
+    --text-primary: #F9FAFB;
+    --text-secondary: #D1D5DB;
+    --border: #4B5563;
+  }
+  */
+}
+
+/* ============================================
+   LANDSCAPE MOBILE OPTIMIZATION
+   ============================================ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .sos-button {
+    height: min(35vh, 140px);
+  }
+  
+  .modal-content {
+    max-height: 80vh;
+  }
+  
+  .page-container {
+    padding-top: var(--space-sm);
+  }
+}
+
+/* ============================================
+   SMALL DEVICE OPTIMIZATION (360px width)
+   ============================================ */
+@media (max-width: 360px) {
+  :root {
+    --space-md: 0.875rem;
+    --space-lg: 1.25rem;
+  }
+  
+  .btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+  }
+  
+  .card {
+    padding: var(--space-sm);
+  }
+  
+  h1 {
+    font-size: var(--text-xl);
+  }
+  
+  h2 {
+    font-size: var(--text-lg);
+  }
+}
+
+/* ============================================
+   TABLET SPECIFIC (768px - 1024px)
+   ============================================ */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .container {
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================
+   DESKTOP OPTIMIZATION (1024px+)
+   ============================================ */
+@media (min-width: 1024px) {
+  .sos-button {
+    width: 320px;
+    height: 180px;
+  }
+  
+  .modal-content {
+    max-width: 800px;
+  }
+  
+  /* Enable hover effects on desktop */
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+  
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+}
+
+/* ============================================
+   WIDE DESKTOP (1440px+)
+   ============================================ */
+@media (min-width: 1440px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* ============================================
+   FOCUS INDICATORS FOR KEYBOARD NAVIGATION
+   ============================================ */
+.btn:focus-visible,
+.input:focus-visible,
+.nav-item:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE SUPPORT
+   ============================================ */
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  .card {
+    border: 2px solid var(--border);
+  }
+  
+  .badge {
+    border: 1px solid currentColor;
+  }
+}
