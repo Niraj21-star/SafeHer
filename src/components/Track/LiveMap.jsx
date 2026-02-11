@@ -287,10 +287,17 @@ const LiveMap = () => {
             );
 
             const snapshot = await getDocs(q);
-            const incidentsList = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const incidentsList = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    // Convert Firestore Timestamp to JavaScript Date
+                    timestamp: data.timestamp?.toDate ? data.timestamp.toDate() : new Date(data.timestamp),
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : null),
+                    triggeredAt: data.triggeredAt?.toDate ? data.triggeredAt.toDate() : (data.triggeredAt ? new Date(data.triggeredAt) : null),
+                };
+            });
 
             setIncidents(incidentsList);
 
@@ -423,12 +430,35 @@ const LiveMap = () => {
     };
 
     const formatTime = (date) => {
-        if (!date) return '';
-        return date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
+        if (!date) return 'N/A';
+        try {
+            const dateObj = date instanceof Date ? date : new Date(date);
+            if (isNaN(dateObj.getTime())) return 'N/A';
+            return dateObj.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        } catch (error) {
+            return 'N/A';
+        }
+    };
+
+    const formatDate = (date) => {
+        if (!date) return 'N/A';
+        try {
+            const dateObj = date instanceof Date ? date : new Date(date);
+            if (isNaN(dateObj.getTime())) return 'N/A';
+            return dateObj.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            return 'N/A';
+        }
     };
 
     const activeViewIncident = isPublicView ? publicIncident : activeIncident;
@@ -629,11 +659,14 @@ const LiveMap = () => {
                                                     {incident.status === 'resolved' ? 'Resolved' : 'Active'}
                                                 </span>
                                                 <span className="text-xs text-gray-500">
-                                                    {new Date(incident.timestamp).toLocaleDateString()}
+                                                    {formatDate(incident.timestamp || incident.triggeredAt || incident.createdAt)}
                                                 </span>
                                             </div>
                                             <p className="text-sm text-gray-600 line-clamp-1">
-                                                {incident.location?.address || 'Location unavailable'}
+                                                {incident.location?.address || 
+                                                 (incident.location?.lat && incident.location?.lng 
+                                                     ? `${incident.location.lat.toFixed(6)}, ${incident.location.lng.toFixed(6)}`
+                                                     : 'Location unavailable')}
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
