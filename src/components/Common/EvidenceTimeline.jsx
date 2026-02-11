@@ -81,16 +81,42 @@ const EvidenceTimeline = ({ incidentId, onClose }) => {
     };
 
     const formatTimestamp = (timestamp) => {
-        const date = new Date(timestamp);
-        return date.toLocaleString('en-IN', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-        });
+        if (!timestamp) return 'N/A';
+        
+        try {
+            let date;
+            
+            // Handle Firestore Timestamp
+            if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+                date = timestamp.toDate();
+            } 
+            // Handle Firebase Timestamp object
+            else if (timestamp._seconds) {
+                date = new Date(timestamp._seconds * 1000);
+            }
+            // Handle ISO string or number
+            else {
+                date = new Date(timestamp);
+            }
+            
+            // Check if date is valid
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date';
+            }
+            
+            return date.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        } catch (error) {
+            console.error('Error formatting timestamp:', error);
+            return 'Invalid Date';
+        }
     };
 
     if (loading) {
@@ -168,7 +194,7 @@ const EvidenceTimeline = ({ incidentId, onClose }) => {
                             <div>
                                 <p className="text-xs text-gray-500">Triggered At</p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    {formatTimestamp(evidence.timestamp)}
+                                    {formatTimestamp(evidence.incident?.timestamp || evidence.timestamp)}
                                 </p>
                             </div>
                         </div>
@@ -178,10 +204,17 @@ const EvidenceTimeline = ({ incidentId, onClose }) => {
                             <div>
                                 <p className="text-xs text-gray-500">Location</p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    {evidence.location?.lat?.toFixed(6) || 'N/A'}, {evidence.location?.lng?.toFixed(6) || 'N/A'}
+                                    {evidence.incident?.location?.address || 
+                                     evidence.location?.address || 
+                                     evidence.incident?.location?.coordinates ||
+                                     (evidence.location?.lat && evidence.location?.lng
+                                         ? `${evidence.location.lat.toFixed(6)}, ${evidence.location.lng.toFixed(6)}`
+                                         : 'Location not available')}
                                 </p>
-                                {evidence.location?.accuracy && (
-                                    <p className="text-xs text-gray-500">±{evidence.location.accuracy}m accuracy</p>
+                                {(evidence.incident?.location?.accuracy || evidence.location?.accuracy) && (
+                                    <p className="text-xs text-gray-500">
+                                        Accuracy: {evidence.incident?.location?.accuracy || evidence.location?.accuracy}
+                                    </p>
                                 )}
                             </div>
                         </div>
@@ -191,7 +224,7 @@ const EvidenceTimeline = ({ incidentId, onClose }) => {
                             <div>
                                 <p className="text-xs text-gray-500">Guardians Notified</p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    {evidence.guardiansNotified} guardian{evidence.guardiansNotified !== 1 ? 's' : ''}
+                                    {evidence.guardians?.notified || evidence.guardiansNotified || 0} guardian{((evidence.guardians?.notified || evidence.guardiansNotified || 0) !== 1) ? 's' : ''}
                                 </p>
                             </div>
                         </div>
@@ -201,7 +234,7 @@ const EvidenceTimeline = ({ incidentId, onClose }) => {
                             <div>
                                 <p className="text-xs text-gray-500">Status</p>
                                 <p className="text-sm font-medium text-gray-900 capitalize">
-                                    {evidence.status}
+                                    {evidence.incident?.status || evidence.status}
                                 </p>
                             </div>
                         </div>
