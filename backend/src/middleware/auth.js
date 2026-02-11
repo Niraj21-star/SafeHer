@@ -4,19 +4,22 @@ import { auth } from '../config/firebase.js';
 export const verifyToken = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        // Development bypass: allow developer to set `x-dev-user-id` header to simulate auth
-        if (process.env.NODE_ENV !== 'production') {
+        const isDemoMode = process.env.DEMO_MODE === 'true';
+        const isDevMode = process.env.NODE_ENV !== 'production';
+        
+        // Demo mode or development bypass: allow developer to set `x-dev-user-id` header to simulate auth
+        if (isDemoMode || isDevMode) {
             const devUser = req.headers['x-dev-user-id'] || req.headers['x-dev-user'];
             if (devUser) {
-                console.debug('[auth] Dev bypass active. Setting userId to', devUser);
+                console.debug('[auth] Demo/Dev bypass active. Setting userId to', devUser);
                 req.userId = String(devUser);
                 req.user = { uid: String(devUser) };
                 return next();
             }
-            // If no auth header in dev, fall back to a default dev user
+            // If no auth header in demo/dev, fall back to a default user
             if (!authHeader) {
-                const fallbackDevUser = process.env.DEV_USER_ID || 'dev-user-001';
-                console.debug('[auth] Dev fallback active. Setting userId to', fallbackDevUser);
+                const fallbackDevUser = process.env.DEV_USER_ID || 'demo-user-001';
+                console.debug('[auth] Demo/Dev fallback active. Setting userId to', fallbackDevUser);
                 req.userId = String(fallbackDevUser);
                 req.user = { uid: String(fallbackDevUser) };
                 return next();
@@ -38,9 +41,10 @@ export const verifyToken = async (req, res, next) => {
             req.userId = decodedToken.uid;
             next();
         } catch (verifyError) {
-            if (process.env.NODE_ENV !== 'production') {
-                const fallbackDevUser = process.env.DEV_USER_ID || req.headers['x-dev-user-id'] || 'dev-user-001';
-                console.warn('[auth] Token verify failed in dev. Falling back to', fallbackDevUser);
+            // In demo mode or dev, fall back to a demo user even if token fails
+            if (isDemoMode || isDevMode) {
+                const fallbackDevUser = process.env.DEV_USER_ID || req.headers['x-dev-user-id'] || 'demo-user-001';
+                console.warn('[auth] Token verify failed in demo/dev mode. Falling back to', fallbackDevUser);
                 req.userId = String(fallbackDevUser);
                 req.user = { uid: String(fallbackDevUser) };
                 return next();
