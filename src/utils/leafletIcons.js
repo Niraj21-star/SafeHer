@@ -5,17 +5,14 @@ export const fixLeafletIcons = async () => {
     try {
         const L = await import('leaflet');
         
-        // Import marker images
-        const iconRetinaUrl = new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).href;
-        const iconUrl = new URL('leaflet/dist/images/marker-icon.png', import.meta.url).href;
-        const shadowUrl = new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).href;
-        
-        // Set default icon paths
+        // Delete the default icon to force re-initialization
         delete L.Icon.Default.prototype._getIconUrl;
+        
+        // Set default icon using data URLs or CDN as fallback
         L.Icon.Default.mergeOptions({
-            iconRetinaUrl,
-            iconUrl,
-            shadowUrl,
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         });
         
         return L;
@@ -26,8 +23,8 @@ export const fixLeafletIcons = async () => {
     }
 };
 
-// Create custom marker icon
-export const createCustomIcon = async (L, options = {}) => {
+// Create custom marker icon using divIcon (no createIcon needed)
+export const createCustomIcon = (L, options = {}) => {
     const {
         color = '#ef4444',
         size = 32,

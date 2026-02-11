@@ -125,6 +125,18 @@ const LiveMap = () => {
                 const L = await fixLeafletIcons();
                 await import('leaflet/dist/leaflet.css');
 
+                // Check if map container exists and is empty
+                const mapContainer = document.getElementById('live-map');
+                if (!mapContainer) {
+                    console.error('Map container not found');
+                    return;
+                }
+                
+                // Clear any existing map instance
+                if (mapContainer._leaflet_id) {
+                    mapContainer._leaflet_id = null;
+                }
+
                 const map = L.map('live-map', { zoomControl: false }).setView([lat, lng], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
