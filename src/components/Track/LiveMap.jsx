@@ -229,6 +229,14 @@ const LiveMap = () => {
             
             // Create markers for each danger zone
             zones.forEach(zone => {
+                // Define risk level colors
+                const riskColors = {
+                    high: '#dc2626',    // red-600
+                    medium: '#f59e0b',  // amber-500
+                    low: '#10b981'      // green-500
+                };
+                const color = riskColors[zone.riskLevel] || riskColors.medium;
+                
                 // Use the custom danger zone icon utility
                 const icon = createDangerZoneIcon(L, zone.riskLevel);
                 
