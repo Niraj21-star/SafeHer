@@ -12,11 +12,14 @@ out/
 # Environment variables
 .env
 .env.local
-.env.example
+.env.development
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 backend/.env
+backend/.env.development
+backend/.env.production
 
 # Logs
 logs
@@ -30,6 +33,9 @@ yarn-error.log*
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+serviceAccountKey.json
+backend/serviceAccountKey.json
+**/serviceAccountKey.json
 
 # IDE
 .idea/
