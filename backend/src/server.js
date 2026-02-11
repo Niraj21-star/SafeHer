@@ -20,16 +20,39 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-// CORS: allow the configured FRONTEND_URL or allow all dev origins when not in production
-const frontendUrl = process.env.FRONTEND_URL;
-if (process.env.NODE_ENV === 'production') {
-    app.use(cors({ origin: frontendUrl, credentials: true }));
-} else {
-    // In development, reflect the request origin to allow Vite on different ports
-    app.use(cors({ origin: (origin, cb) => cb(null, true), credentials: true }));
-}
+// ===== CORS Configuration (MUST be first!) =====
+const corsOptions = {
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'https://safe-her-topaz.vercel.app',
+            'http://localhost:5173',
+            'http://localhost:3000'
+        ];
+        
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
+    maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Body parser middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting - relaxed for development
 const limiter = rateLimit({
@@ -59,40 +82,56 @@ app.use('/api/geocode', geocodeRoutes);
 app.use('/api/danger-zones', dangerZonesRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        service: 'SafeHer API'
-    });
-});
-
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        service: 'SafeHer API'
+        service: 'SafeHer API',
+        environment: process.env.NODE_ENV || 'development'
     });
+});
+
+// Legacy health check (for backwards compatibility)
+app.get('/health', (req, res) => {
+    res.redirect(301, '/api/health');
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
+    console.error('❌ Error:', err.message);
+    console.error('Stack:', err.stack);
+    
+    // CORS error
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({
+            error: 'CORS policy: Origin not allowed',
+            origin: req.headers.origin
+        });
+    }
+    
     res.status(err.status || 500).json({
         error: err.message || 'Internal server error',
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+        ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
     });
 });
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).json({ error: 'Endpoint not found' });
+    res.status(404).json({
+        error: 'Endpoint not found',
+        path: req.path,
+        method: req.method
+    });
 });
 
 // Start server
 app.listen(PORT, () => {
+    console.log('🚀 ==========================================');
     console.log(`🚀 SafeHer API running on port ${PORT}`);
-    console.log(`📍 Health check: http://localhost:${PORT}/health`);
+    console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ CORS enabled for: https://safe-her-topaz.vercel.app`);
+    console.log('🚀 ==========================================');
     logDemoModeStatus();
 });
 
