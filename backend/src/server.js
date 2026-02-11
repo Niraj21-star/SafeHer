@@ -20,6 +20,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy - Required for Render, Heroku, etc. to properly identify client IPs
+app.set('trust proxy', 1);
+
 // ===== CORS Configuration (MUST be first!) =====
 const corsOptions = {
     origin: function (origin, callback) {
