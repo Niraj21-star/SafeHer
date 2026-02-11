@@ -200,6 +200,8 @@ const LiveMap = () => {
     const fetchDangerZones = async (lat, lng) => {
         try {
             const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+            console.log('🗺️ Fetching danger zones for:', { lat, lng, isDemoMode });
+            
             const response = await dangerZonesAPI.getZones({
                 lat,
                 lng,
@@ -207,18 +209,28 @@ const LiveMap = () => {
                 demo: isDemoMode
             });
             
+            console.log('🗺️ Danger zones response:', response.data);
+            
             if (response.data?.zones) {
+                console.log('🗺️ Rendering', response.data.zones.length, 'danger zones');
                 setDangerZones(response.data.zones);
                 renderDangerZones(response.data.zones);
+            } else {
+                console.log('⚠️ No zones in response data');
             }
         } catch (error) {
+            console.error('❌ Danger zones fetch error:', error);
             // Silent error - danger zones not critical for core functionality
         }
     };
 
     // Render danger zone markers on map
     const renderDangerZones = async (zones) => {
-        if (!mapRef.current) return;
+        console.log('🎯 renderDangerZones called with:', zones?.length, 'zones');
+        if (!mapRef.current) {
+            console.log('⚠️ No map reference, skipping render');
+            return;
+        }
         
         try {
             const L = await fixLeafletIcons();
@@ -227,8 +239,11 @@ const LiveMap = () => {
             dangerZoneMarkers.current.forEach(marker => marker.remove());
             dangerZoneMarkers.current = [];
             
+            console.log('✅ Starting to create markers for', zones.length, 'zones');
+            
             // Create markers for each danger zone
-            zones.forEach(zone => {
+            zones.forEach((zone, index) => {
+                console.log(`📍 Creating marker ${index + 1}:`, zone);
                 // Define risk level colors
                 const riskColors = {
                     high: '#dc2626',    // red-600
@@ -266,7 +281,10 @@ const LiveMap = () => {
                 dangerZoneMarkers.current.push(marker);
             });
             
+            console.log('✅ Successfully created', dangerZoneMarkers.current.length, 'danger zone markers');
+            
         } catch (error) {
+            console.error('❌ Error rendering danger zones:', error);
             // Silent error - non-critical feature
         }
     };
