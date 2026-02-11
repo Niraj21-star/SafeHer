@@ -51,11 +51,16 @@ api.interceptors.response.use(
             const message = data?.message || data?.error || 'An error occurred';
             console.error(`API Error [${status}]:`, message);
             if (status === 401) console.warn('[api] Unauthorized - possibly missing/invalid Firebase ID token');
+            
+            // Attach user-friendly message
+            error.userMessage = message;
         } else if (error.request) {
             // Request made but no response
-            console.error('Network Error: No response from server');
+            console.error('Network Error: No response from server', error.message);
+            error.userMessage = 'Network error. Please check your connection and try again.';
         } else {
             console.error('Error:', error.message);
+            error.userMessage = error.message || 'An unexpected error occurred';
         }
         return Promise.reject(error);
     }

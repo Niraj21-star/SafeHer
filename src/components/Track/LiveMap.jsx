@@ -12,6 +12,7 @@ import {
 } from '../../services/geolocation';
 import { sosAPI } from '../../services/api';
 import { dangerZonesAPI } from '../../services/api';
+import { fixLeafletIcons, createCustomIcon, createDangerZoneIcon } from '../../utils/leafletIcons';
 import {
     MapPin,
     RefreshCw,
@@ -102,14 +103,15 @@ const LiveMap = () => {
             const id = watchPosition(
                 (newPos) => updateLocation(newPos),
                 (error) => {
-                    // Silent error handling - user will see location unavailable
-                    toast.error('Location tracking interrupted');
+                    const message = error?.userMessage || 'Location tracking interrupted';
+                    toast.error(message);
                 }
             );
             setWatchId(id);
         } catch (error) {
-            // Silent error handling - UI will show appropriate message
-            toast.error('Unable to get location. Please enable GPS.');
+            const message = error?.userMessage || 'Unable to get location. Please enable GPS.';
+            toast.error(message);
+            console.error('Location error:', error);
         } finally {
             setLoading(false);
         }
@@ -119,18 +121,23 @@ const LiveMap = () => {
         // Initialize map if not present and Leaflet available
         try {
             if (!mapRef.current) {
-                const L = await import('leaflet');
+                // Fix Leaflet marker icons for Vite production
+                const L = await fixLeafletIcons();
                 await import('leaflet/dist/leaflet.css');
 
                 const map = L.map('live-map', { zoomControl: false }).setView([lat, lng], 15);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
 
-                const marker = L.marker([lat, lng]).addTo(map);
+                // Create custom marker with fixed icons
+                const customIcon = createCustomIcon(L, { color: '#ef4444', icon: '📍' });
+                const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+                
                 mapRef.current = map;
                 markerRef.current = marker;
-                pathRef.current = L.polyline([[lat, lng]], { color: 'red' }).addTo(map);
+                pathRef.current = L.polyline([[lat, lng]], { color: '#ef4444', weight: 3 }).addTo(map);
                 polylineLatLngs.current = [[lat, lng]];
                 
                 // Fetch danger zones for this location
@@ -145,6 +152,7 @@ const LiveMap = () => {
                 if (pathRef.current) pathRef.current.setLatLngs(polylineLatLngs.current);
             }
         } catch (mapErr) {
+            console.error('Map initialization error:', mapErr);
             // Leaflet not installed or failed — fallback to placeholder
         }
     };
@@ -174,45 +182,16 @@ const LiveMap = () => {
         if (!mapRef.current) return;
         
         try {
-            const L = await import('leaflet');
+            const L = await fixLeafletIcons();
             
             // Clear existing danger zone markers
             dangerZoneMarkers.current.forEach(marker => marker.remove());
             dangerZoneMarkers.current = [];
             
-            // Define risk level colors
-            const riskColors = {
-                high: '#dc2626',    // red-600
-                medium: '#f59e0b',  // amber-500
-                low: '#10b981'      // green-500
-            };
-            
             // Create markers for each danger zone
             zones.forEach(zone => {
-                const color = riskColors[zone.riskLevel] || riskColors.low;
-                
-                // Create custom icon
-                const icon = L.divIcon({
-                    html: `
-                        <div style="
-                            width: 32px;
-                            height: 32px;
-                            background-color: ${color};
-                            border: 3px solid white;
-                            border-radius: 50%;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            font-size: 16px;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                        ">
-                            ⚠️
-                        </div>
-                    `,
-                    className: 'danger-zone-marker',
-                    iconSize: [32, 32],
-                    iconAnchor: [16, 16]
-                });
+                // Use the custom danger zone icon utility
+                const icon = createDangerZoneIcon(L, zone.riskLevel);
                 
                 // Create marker
                 const marker = L.marker([zone.lat, zone.lng], { icon })

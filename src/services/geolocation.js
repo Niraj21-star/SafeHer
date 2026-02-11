@@ -4,7 +4,9 @@
 export const getCurrentPosition = (options = {}) => {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-            reject(new Error('Geolocation is not supported by your browser'));
+            const error = new Error('Geolocation is not supported by your browser');
+            error.code = 'NOT_SUPPORTED';
+            reject(error);
             return;
         }
 
@@ -27,6 +29,22 @@ export const getCurrentPosition = (options = {}) => {
                 });
             },
             (error) => {
+                // Enhance error with user-friendly messages
+                let userMessage = 'Unable to get your location';
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        userMessage = 'Location access denied. Please enable location permissions in your browser settings.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        userMessage = 'Location unavailable. Please ensure GPS/location services are enabled.';
+                        break;
+                    case error.TIMEOUT:
+                        userMessage = 'Location request timed out. Please try again.';
+                        break;
+                }
+                
+                error.userMessage = userMessage;
                 reject(error);
             },
             defaultOptions

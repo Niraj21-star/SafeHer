@@ -20,6 +20,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // NEVER cache API calls - always fetch fresh
+  if (url.pathname.startsWith('/api/') || 
+      url.hostname.includes('safeher-c917.onrender.com') ||
+      url.hostname.includes('firebaseapp.com') ||
+      url.hostname.includes('googleapis.com')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Bypass non-GET and cross-origin requests
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) {
     event.respondWith(fetch(event.request));
