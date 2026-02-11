@@ -98,7 +98,7 @@ router.get('/', async (req, res) => {
         const { lat, lng, radius, demo } = req.query;
         
         // Demo mode: return mock data
-        if (demo === 'true' || process.env.VITE_DEMO_MODE === 'true') {
+        if (demo === 'true' || process.env.DEMO_MODE === 'true') {
             const demoLat = parseFloat(lat) || 18.5204;
             const demoLng = parseFloat(lng) || 73.8567;
             const mockZones = generateMockDangerZones(demoLat, demoLng);
