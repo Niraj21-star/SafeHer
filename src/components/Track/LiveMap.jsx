@@ -155,13 +155,40 @@ const LiveMap = () => {
                 // Fetch danger zones for this location
                 fetchDangerZones(lat, lng);
             } else {
-                // update marker and path
-                const marker = markerRef.current;
+                // Check if map is still valid (not destroyed)
                 const map = mapRef.current;
-                if (marker) marker.setLatLng([lat, lng]);
-                if (map) map.panTo([lat, lng]);
+                const marker = markerRef.current;
+                
+                // Verify map container still exists in DOM
+                const mapContainer = document.getElementById('live-map');
+                if (!mapContainer || !mapContainer._leaflet_id) {
+                    console.warn('Map container lost, reinitializing...');
+                    mapRef.current = null;
+                    markerRef.current = null;
+                    pathRef.current = null;
+                    // Recursively call to reinitialize
+                    return updateMapFromCoords(lat, lng);
+                }
+                
+                // Update marker and map position
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                }
+                
+                if (map && map.getContainer()) {
+                    try {
+                        map.panTo([lat, lng]);
+                    } catch (panError) {
+                        console.warn('panTo failed, using setView:', panError);
+                        map.setView([lat, lng], map.getZoom());
+                    }
+                }
+                
+                // Update path
                 polylineLatLngs.current.push([lat, lng]);
-                if (pathRef.current) pathRef.current.setLatLngs(polylineLatLngs.current);
+                if (pathRef.current) {
+                    pathRef.current.setLatLngs(polylineLatLngs.current);
+                }
             }
         } catch (mapErr) {
             console.error('Map initialization error:', mapErr);

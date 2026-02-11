@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Firebase configuration from environment variables
@@ -19,9 +19,12 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize services
 export const auth = getAuth(app);
+
+// Use memory cache to avoid multi-tab persistence issues
 export const db = initializeFirestore(app, {
-    localCache: persistentLocalCache()
+    localCache: memoryLocalCache()
 });
+
 export const storage = getStorage(app);
 
 export default app;
