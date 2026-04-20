@@ -29,13 +29,30 @@ const corsOptions = {
         const allowedOrigins = [
             'https://safe-her-topaz.vercel.app',
             'http://localhost:5173',
-            'http://localhost:3000'
+            'http://localhost:3000',
+            'http://localhost:4173',
+            'http://127.0.0.1:5173',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:4173'
         ];
-        
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+
+        if (process.env.FRONTEND_URL) {
+            allowedOrigins.push(process.env.FRONTEND_URL);
+        }
+        if (process.env.CORS_ALLOWED_ORIGINS) {
+            process.env.CORS_ALLOWED_ORIGINS.split(',')
+                .map((value) => value.trim())
+                .filter(Boolean)
+                .forEach((value) => allowedOrigins.push(value));
+        }
+
+        const isLocalhost = typeof origin === 'string' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+        const isVercelPreview = typeof origin === 'string' && /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+
+        // Allow requests with no origin (mobile apps, Postman, file://, etc.)
         if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.includes(origin)) {
+
+        if (allowedOrigins.includes(origin) || isLocalhost || isVercelPreview) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
